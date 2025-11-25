@@ -92,6 +92,22 @@ def add_stock(id):
         
     return render_template('portfolio/add_stock.html', portfolio=portfolio)
 
+@bp.route('/edit_stock/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_stock(id):
+    holding = Holding.query.get_or_404(id)
+    if holding.portfolio.owner != current_user:
+        abort(403)
+        
+    if request.method == 'POST':
+        units = float(request.form['units'])
+        holding.units = units
+        db.session.commit()
+        flash(f'Updated {holding.symbol} units.')
+        return redirect(url_for('portfolio.view', id=holding.portfolio.id))
+        
+    return render_template('portfolio/edit_stock.html', holding=holding)
+
 @bp.route('/delete_stock/<int:id>')
 @login_required
 def delete_stock(id):

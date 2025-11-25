@@ -46,6 +46,8 @@
                             {% endif %}
                         </td>
                         <td>
+                            <a href="{{ url_for('portfolio.edit_stock', id=holding.id) }}"
+                                style="margin-right: 0.5rem;">Edit</a>
                             <a href="{{ url_for('portfolio.delete_stock', id=holding.id) }}" class="text-danger"
                                 onclick="return confirm('Remove this stock?')">Remove</a>
                         </td>
