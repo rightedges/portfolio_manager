@@ -57,17 +57,48 @@ A multi-user stock portfolio management web application built with Python and Fl
 ### Proxmox LXC Deployment
 
 1.  **Create a Python LXC container** (e.g., Ubuntu or Debian).
-2.  **Install Python and Pip:**
+
+2.  **Install System Dependencies:**
+    Update the package list and install Python, Pip, Virtualenv, and Git:
     ```bash
-    apt update && apt install python3 python3-pip python3-venv
+    apt update && apt install -y python3 python3-pip python3-venv git
     ```
-3.  **Follow the Local Development steps** to clone and install dependencies.
-4.  **Run with a production server** (Recommended):
+
+3.  **Clone the Repository:**
+    ```bash
+    git clone <repository-url>
+    cd portfolio-manager
+    ```
+
+4.  **Set up the Environment:**
+    Create and activate a virtual environment:
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+
+5.  **Install Python Dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+6.  **Configure Environment Variables:**
+    Create a `.env` file or export variables directly:
+    ```bash
+    export FLASK_APP=run.py
+    export SECRET_KEY=your-secret-key
+    # Database defaults to local sqlite:///portfolio.db
+    ```
+
+7.  **Run with Gunicorn (Production):**
+    Install Gunicorn and start the server:
     ```bash
     pip install gunicorn
     gunicorn -w 4 -b 0.0.0.0:8000 run:app
     ```
-5.  **Access** via the container's IP address at port 8000.
+
+8.  **Access the Application:**
+    Open your browser and navigate to `http://<container-ip>:8000`.
 
 ## Usage
 

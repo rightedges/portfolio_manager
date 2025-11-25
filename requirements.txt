@@ -3,4 +3,4 @@ Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 requests
 python-dotenv
-yfinance==1.0.0
+yfinance==0.2.66
