@@ -113,6 +113,9 @@ def delete(id):
         abort(403)
         
     db.session.delete(portfolio)
+    db.session.commit()
+    flash('Portfolio deleted successfully.')
+    return redirect(url_for('portfolio.index'))
 @bp.route('/rebalance/<int:id>', methods=['GET', 'POST'])
 @login_required
 def rebalance(id):
