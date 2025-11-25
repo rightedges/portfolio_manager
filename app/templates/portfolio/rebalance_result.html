@@ -41,6 +41,8 @@
 
     <div style="margin-top: 2rem;">
         <a href="{{ url_for('portfolio.view', id=portfolio.id) }}" class="btn-secondary">Back to Portfolio</a>
+        <a href="{{ url_for('portfolio.rebalance', id=portfolio.id) }}" class="btn-primary">Adjust Rebalance
+            Settings</a>
     </div>
 </div>
 {% endblock %}

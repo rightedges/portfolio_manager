@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from app import db
 from app.models import Portfolio, Holding
-from app.services.twelve_data import check_symbol, get_prices
+from app.services.market_data import check_symbol, get_prices
 
 bp = Blueprint('portfolio', __name__, url_prefix='/portfolio')
 
@@ -41,7 +41,19 @@ def view(id):
     holdings_data = []
     
     for h in holdings:
-        price = prices.get(h.symbol, 0)
+        price_data = prices.get(h.symbol)
+        
+        if price_data:
+            # API returned data, update cache
+            price = price_data['price']
+            timestamp = price_data['timestamp']
+            h.last_price = price
+            h.last_price_timestamp = timestamp
+        else:
+            # API failed, use cache
+            price = h.last_price if h.last_price is not None else 0
+            timestamp = h.last_price_timestamp if h.last_price_timestamp else "N/A"
+            
         value = price * h.units
         total_value += value
         holdings_data.append({
@@ -49,8 +61,11 @@ def view(id):
             'symbol': h.symbol,
             'units': h.units,
             'price': price,
+            'timestamp': timestamp,
             'value': value
         })
+        
+    db.session.commit() # Save updated prices to DB
         
     return render_template('portfolio/view.html', portfolio=portfolio, holdings=holdings_data, total_value=total_value)
 
@@ -113,35 +128,52 @@ def rebalance(id):
     holdings_data = []
     total_value = 0
     for h in holdings:
-        price = prices.get(h.symbol, 0)
+        price_data = prices.get(h.symbol)
+        
+        if price_data:
+            # API returned data, update cache
+            price = price_data['price']
+            h.last_price = price
+            # We could update timestamp too but rebalance view doesn't show it usually, 
+            # but good to keep consistent.
+            h.last_price_timestamp = price_data['timestamp']
+        else:
+            # API failed, use cache
+            price = h.last_price if h.last_price is not None else 0
+            
         value = price * h.units
         total_value += value
         holdings_data.append({
             'symbol': h.symbol,
             'units': h.units,
             'price': price,
-            'value': value
+            'value': value,
+            'target_percentage': h.target_percentage
         })
+        
+    db.session.commit() # Save updated prices
         
     if request.method == 'POST':
         cash = float(request.form.get('cash', 0))
         
-        # Parse target ratios
+        # Parse target ratios (percentages)
         targets = {}
         total_ratio = 0
         for h in holdings:
-            ratio = float(request.form.get(f'ratio_{h.symbol}', 0))
+            percentage = float(request.form.get(f'ratio_{h.symbol}', 0))
+            
+            # Save the target percentage to the database
+            h.target_percentage = percentage
+            
+            ratio = percentage / 100.0
             targets[h.symbol] = ratio
             total_ratio += ratio
             
-        # Validate total ratio (should be close to 1.0 or 100%)
-        # For flexibility, let's assume user enters decimals (0.5) or percentages (50).
-        # We'll normalize if > 1.
-        if total_ratio > 1.01: # Allow small float error
-             # Assume percentages were entered, normalize to 0-1
-             for sym in targets:
-                 targets[sym] /= 100.0
-             total_ratio /= 100.0
+        db.session.commit()
+            
+        # Validate total ratio (should be close to 1.0)
+        # We can just proceed; if it doesn't sum to 100%, the user might have intended to leave cash or made a mistake.
+        # But the math works regardless (it will just target that % of the total portfolio).
 
         new_total_value = total_value + cash
         
@@ -150,9 +182,12 @@ def rebalance(id):
         for h in holdings:
             target_ratio = targets.get(h.symbol, 0)
             target_value = new_total_value * target_ratio
-            current_value = h.units * prices.get(h.symbol, 0)
+            # Use cached price if API failed (which we handled above, but we need to access it here)
+            # Since we updated the DB objects above, we can use h.last_price
+            price = h.last_price if h.last_price is not None else 0
+            
+            current_value = h.units * price
             diff = target_value - current_value
-            price = prices.get(h.symbol, 0)
             
             if price > 0:
                 units_to_change = diff / price

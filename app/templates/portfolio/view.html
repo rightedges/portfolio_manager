@@ -7,8 +7,10 @@
         <p class="total-value">Total Value: ${{ "%.2f"|format(total_value) }}</p>
     </div>
     <div class="actions">
-        <a href="{{ url_for('portfolio.add_stock', id=portfolio.id) }}" class="btn-primary">Add Stock</a>
-        <a href="#" class="btn-secondary" id="rebalance-btn">Rebalance</a>
+        <a href="{{ url_for('portfolio.view', id=portfolio.id) }}" class="btn-secondary">Refresh Prices</a>
+        <a href="{{ url_for('portfolio.add_stock', id=portfolio.id) }}" class="btn-secondary">Add Stock</a>
+        <a href="{{ url_for('portfolio.rebalance', id=portfolio.id) }}" class="btn-secondary"
+            id="rebalance-btn">Rebalance</a>
     </div>
 </div>
 
@@ -21,6 +23,7 @@
                     <th>Symbol</th>
                     <th>Units</th>
                     <th>Price</th>
+                    <th>Time</th>
                     <th>Value</th>
                     <th>%</th>
                     <th>Action</th>
@@ -32,6 +35,7 @@
                     <td>{{ holding.symbol }}</td>
                     <td>{{ holding.units }}</td>
                     <td>${{ "%.2f"|format(holding.price) }}</td>
+                    <td style="font-size: 0.85rem; color: var(--text-muted);">{{ holding.timestamp }}</td>
                     <td>${{ "%.2f"|format(holding.value) }}</td>
                     <td>
                         {% if total_value > 0 %}
@@ -47,7 +51,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center">No holdings yet.</td>
+                    <td colspan="7" class="text-center">No holdings yet.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -84,6 +88,17 @@
                 plugins: {
                     legend: {
                         position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                var label = context.label || '';
+                                var value = context.raw || 0;
+                                var total = context.chart._metasets[context.datasetIndex].total;
+                                var percentage = Math.round((value / total) * 100) + '%';
+                                return label + ': $' + value.toFixed(2) + ' (' + percentage + ')';
+                            }
+                        }
                     }
                 }
             }
