@@ -1,0 +1,89 @@
+# Portfolio Manager
+
+A multi-user stock portfolio management web application built with Python and Flask. This app allows users to track their investments, view real-time prices via Twelve Data, and calculate rebalancing actions to maintain their desired asset allocation.
+
+## Features
+
+-   **Multi-User Support**: Secure registration and login for multiple users.
+-   **Multiple Portfolios**: Manage separate portfolios (e.g., RRSP, TFSA, Non-Registered).
+-   **Real-Time Data**: Fetches live stock prices using the [Twelve Data API](https://twelvedata.com/).
+-   **Portfolio Visualization**: Interactive doughnut charts showing current allocation.
+-   **Smart Rebalancing**: Calculate exact buy/sell units based on target percentages and available cash.
+-   **Premium UI**: Modern, responsive design with a clean interface.
+
+## Prerequisites
+
+-   Python 3.8+
+-   A [Twelve Data](https://twelvedata.com/) API Key (Free tier available).
+
+## Installation
+
+### Local Development
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd portfolio-manager
+    ```
+
+2.  **Create a virtual environment:**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Set up environment variables:**
+    Create a `.env` file in the root directory (optional, or set them in your shell):
+    ```bash
+    export FLASK_APP=run.py
+    export SECRET_KEY=your-secret-key
+    # Database defaults to local sqlite:///portfolio.db
+    ```
+
+5.  **Initialize the database:**
+    The app will automatically create the SQLite database tables on the first run.
+
+6.  **Run the application:**
+    ```bash
+    python run.py
+    ```
+    Access the app at `http://localhost:5000`.
+
+### Proxmox LXC Deployment
+
+1.  **Create a Python LXC container** (e.g., Ubuntu or Debian).
+2.  **Install Python and Pip:**
+    ```bash
+    apt update && apt install python3 python3-pip python3-venv
+    ```
+3.  **Follow the Local Development steps** to clone and install dependencies.
+4.  **Run with a production server** (Recommended):
+    ```bash
+    pip install gunicorn
+    gunicorn -w 4 -b 0.0.0.0:8000 run:app
+    ```
+5.  **Access** via the container's IP address at port 8000.
+
+## Usage
+
+1.  **Register** a new account.
+2.  **Enter your Twelve Data API Key** (can be added during registration or later).
+3.  **Create a Portfolio** (e.g., "Retirement").
+4.  **Add Stocks**: Enter the symbol (e.g., AAPL) and number of units.
+5.  **Rebalance**:
+    -   Go to the portfolio view.
+    -   Click "Rebalance".
+    -   Enter your available cash to invest.
+    -   Set your target allocation ratios (e.g., 0.6 for 60%).
+    -   View the recommended Buy/Sell orders.
+
+## Tech Stack
+
+-   **Backend**: Flask, SQLAlchemy (SQLite)
+-   **Frontend**: HTML5, Vanilla CSS, Chart.js
+-   **API**: Twelve Data

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="portfolio-details-header">
+    <div>
+        <h2>{{ portfolio.name }} <span class="badge">{{ portfolio.type }}</span></h2>
+        <p class="total-value">Total Value: ${{ "%.2f"|format(total_value) }}</p>
+    </div>
+    <div class="actions">
+        <a href="{{ url_for('portfolio.add_stock', id=portfolio.id) }}" class="btn-primary">Add Stock</a>
+        <a href="#" class="btn-secondary" id="rebalance-btn">Rebalance</a>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="holdings-section">
+        <h3>Holdings</h3>
+        <table class="holdings-table">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Units</th>
+                    <th>Price</th>
+                    <th>Value</th>
+                    <th>%</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for holding in holdings %}
+                <tr>
+                    <td>{{ holding.symbol }}</td>
+                    <td>{{ holding.units }}</td>
+                    <td>${{ "%.2f"|format(holding.price) }}</td>
+                    <td>${{ "%.2f"|format(holding.value) }}</td>
+                    <td>
+                        {% if total_value > 0 %}
+                        {{ "%.1f"|format(holding.value / total_value * 100) }}%
+                        {% else %}
+                        0%
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('portfolio.delete_stock', id=holding.id) }}" class="text-danger"
+                            onclick="return confirm('Remove this stock?')">Remove</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center">No holdings yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="chart-section">
+        <h3>Allocation</h3>
+        <canvas id="allocationChart"></canvas>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('allocationChart');
+    const data = {
+        labels: [{% for h in holdings %}'{{ h.symbol }}', {% endfor %}],
+    datasets: [{
+        data: [{% for h in holdings %}{{ h.value }}, {% endfor %}],
+        backgroundColor: [
+            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#06b6d4'
+        ]
+        }]
+    };
+
+    if (data.labels.length > 0) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
